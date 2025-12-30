@@ -1,6 +1,6 @@
 import numpy as np
-from spline_class import Spline, SplineDistribution
-from utils import construct_G, gaussian_quadrature, tartaglia_line
+from spline_density.spline_class import Spline, SplineDistribution
+from spline_density.utils import construct_G, gaussian_quadrature, tartaglia_line
 
 def MLE_density(
     sample,
@@ -11,7 +11,7 @@ def MLE_density(
     U = None,
     k = None,
     t = None,
-    gamma = 0,
+    gamma = 0.,
     quadrature_n = None,
     clip_lim = 50,
     eps_conv = 1e-6,

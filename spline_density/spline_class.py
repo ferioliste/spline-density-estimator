@@ -1,5 +1,5 @@
 import numpy as np
-from utils import gaussian_quadrature
+from spline_density.utils import gaussian_quadrature
 import numbers
 
 class Spline:
@@ -117,7 +117,7 @@ class Spline:
     
 
 class SplineDistribution():
-    def __init__(self, h, L, U, quadrature_n = None, clip_lim = 1e9, old_gamma = 0, new_gamma = 0):        
+    def __init__(self, h, L, U, quadrature_n = None, clip_lim = 1e9, old_gamma = 0., new_gamma = 0.):        
         self.h = h
         self.h_logpdf = lambda z: np.clip(h(z), -clip_lim, clip_lim)
         self.L = L
@@ -149,7 +149,7 @@ class SplineDistribution():
         shape = x.shape
         x = x.ravel()
         
-        if self.gamma == 0:
+        if self.gamma == 0.:
             res = np.where((x >= self.L) & (x <= self.U), self.log_density(x), -np.inf)
         else:
             res = np.where((x >= self.L) & (x <= self.U), np.log(self.pdf(x)), -np.inf)
@@ -188,30 +188,30 @@ class SplineDistribution():
         else:
             return res.reshape(shape)
     
-    def ppf(self, alpha, tol=1e-10, maxiter=1000):
-        alpha = np.asarray(alpha, dtype=float)
-        shape = alpha.shape
-        alpha = alpha.ravel()
+    def ppf(self, q, tol=1e-10, max_iterations=1000):
+        q = np.asarray(q, dtype=float)
+        shape = q.shape
+        q = q.ravel()
         
-        res = np.empty_like(alpha)
+        res = np.empty_like(q)
 
-        mask_low = (alpha <= 0.)
-        mask_high = (alpha >= 1.)
+        mask_low = (q <= 0.)
+        mask_high = (q >= 1.)
         mask_mid = (~mask_low) & (~mask_high)
 
         res[mask_low] = self.L
         res[mask_high] = self.U
 
         if np.any(mask_mid):
-            q = alpha[mask_mid]
-            lo = np.full_like(q, self.L)
-            hi = np.full_like(q, self.U)
+            q_mid = q[mask_mid]
+            lo = np.full_like(q_mid, self.L)
+            hi = np.full_like(q_mid, self.U)
 
-            for _ in range(maxiter):
+            for _ in range(max_iterations):
                 mid = 0.5 * (lo + hi)
                 cdf_mid = self.cdf(mid)
 
-                go_right = cdf_mid < q
+                go_right = cdf_mid < q_mid
                 lo[go_right] = mid[go_right]
                 hi[~go_right] = mid[~go_right]
 
@@ -225,3 +225,10 @@ class SplineDistribution():
         else:
             return res.reshape(shape)
     
+    def rvs(size=1, rng=None):
+        if rng is None or isinstance(rng, numbers.Integral):
+            rng = np.random.default_rng(rng)
+        elif not isinstance(rng, np.random.Generator):
+            raise TypeError("`rng` must be None, an integer, or a numpy.random.Generator.")
+        
+        return self.ppf(rng.uniform(0.0, 1.0, size=size))

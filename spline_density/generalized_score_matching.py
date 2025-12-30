@@ -1,6 +1,6 @@
 import numpy as np
-from spline_class import Spline, SplineDistribution
-from utils import construct_G
+from spline_density.spline_class import Spline, SplineDistribution
+from spline_density.utils import construct_G
  
 def generalized_score_matching(
     sample,
@@ -11,7 +11,7 @@ def generalized_score_matching(
     U = None,
     k = None,
     t = None,
-    phi_cap = 0,
+    phi_cap = 1,
     alpha = 2,
     eps_conv = 1e-6,
     max_iterations = 1000,
@@ -49,7 +49,6 @@ def generalized_score_matching(
     coeffs_theta = theta
     h = Spline(degree=degree, knots=t[1:-1], coeffs=coeffs_theta)
     
-    G_0 = construct_G(degree, t, 0)
     G_q = construct_G(degree, t, q)
     
     phi = lambda x: np.minimum(np.minimum(x-L, U-x), phi_cap)
@@ -65,7 +64,12 @@ def generalized_score_matching(
         de_h = h.derivative()
         
         old_ell = ell
-        ell = - (de_h(sample) + 0.5 * h(sample)**2).mean() - 0.5*lambda_n*(theta @ G_q @ theta)
+        ell = - ( \
+                g(phi(sample))*de_h(sample) \
+                + de_phi(sample)*de_g(phi(sample))*h(sample) \
+                + 0.5*g(phi(sample))*h(sample)**2 \
+                ).mean() \
+                - 0.5*lambda_n*(theta @ G_q @ theta)
         
         eps = (old_ell - ell)/max(1., abs(old_ell)) if np.isfinite(old_ell) else eps_conv + 1.
         if 0 <= eps < eps_conv:
@@ -79,8 +83,8 @@ def generalized_score_matching(
             np.vstack([np.zeros((1, de_h_basis.shape[1])), de_h_basis]) * np.minimum(np.arange(k+degree+1), degree)[:, None] * g(phi(sample))[None, :] \
             + h_basis * (h(sample) * g(phi(sample)))[None, :] \
             + h_basis * (de_phi(sample) * de_g(phi(sample)))[None, :] \
-            ).mean(axis=1) - lambda_n*(theta @ G)
-        Hessian = - (h_basis * g(phi(sample))[None, :]) @ h_basis.T / sample.size - lambda_n*G
+            ).mean(axis=1) - lambda_n*(theta @ G_q)
+        Hessian = - (h_basis * g(phi(sample))[None, :]) @ h_basis.T / sample.size - lambda_n*G_q
             
         theta -= 0.1 * np.linalg.solve(Hessian, gradient)
         
@@ -89,7 +93,7 @@ def generalized_score_matching(
 
         iterations += 1
     
-    distr = SplineDistribution(h, L, U)
+    distr = SplineDistribution(h.integral(), L, U)
     if output_stats:
         stats = dict()
         stats["iterations"] = iterations

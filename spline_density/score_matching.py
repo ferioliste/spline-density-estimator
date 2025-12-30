@@ -1,6 +1,6 @@
 import numpy as np
-from spline_class import Spline, SplineDistribution
-from utils import construct_G
+from spline_density.spline_class import Spline, SplineDistribution
+from spline_density.utils import construct_G
 
 def score_matching(
     sample,
@@ -11,7 +11,7 @@ def score_matching(
     U = None,
     k = None,
     t = None,
-    gamma = 0,
+    gamma = 0.,
     eps_conv = 1e-6,
     max_iterations = 1000,
     output_stats = False,
@@ -80,7 +80,7 @@ def score_matching(
 
         iterations += 1
     
-    distr = SplineDistribution(h, L, U)
+    distr = SplineDistribution(h.integral(), L, U)
     if output_stats:
         stats = dict()
         stats["iterations"] = iterations
