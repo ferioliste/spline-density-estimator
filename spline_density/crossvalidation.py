@@ -105,7 +105,7 @@ def kfold_crossvalidation(
         best_estimator = best_estimator_tuple
         return best_estimator
 
-def simple_crossvalidation(
+def simple_validation(
     estimator,
     sample,
     degree,
@@ -204,4 +204,5 @@ def simple_crossvalidation(
         return best_estimator, stats
     else:
         best_estimator = best_estimator_tuple
+
         return best_estimator
