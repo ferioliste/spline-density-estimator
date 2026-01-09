@@ -1,5 +1,5 @@
-from spline_class import Spline, SplineDistribution
-from MLE_density import MLE_density
-from score_matching import score_matching
-from generalized_score_matching import generalized_score_matching
-from crossvalidation import kfold_crossvalidation, simple_crossvalidation
+from spline_density.spline_class import Spline, SplineDistribution
+from spline_density.MLE_density import MLE_density
+from spline_density.score_matching import score_matching
+from spline_density.generalized_score_matching import generalized_score_matching
+from spline_density.crossvalidation import kfold_crossvalidation, simple_validation
